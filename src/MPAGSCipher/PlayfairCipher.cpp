@@ -16,8 +16,6 @@ void PlayfairCipher::setkey(const std::string& key) {
     // store the original key
     key_ = key;
 
-    std::cout<< key_ << std::endl;
-
     key_ += "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
     std::transform(key_.begin(), key_.end(), key_.begin(), ::toupper );
@@ -62,8 +60,6 @@ void PlayfairCipher::setkey(const std::string& key) {
     auto rem_iter2 = std::remove_if(key_.begin(),key_.end(), dup_det);
     key_.erase(rem_iter2, key_.end());
 
-    std::cout << key_ << std::endl;
-
     using str2cord_map = std::map<std::string,std::pair<int,int>>;
 
     using cord2str_map = std::map<std::pair<int,int>,std::string>;
@@ -99,26 +95,55 @@ void PlayfairCipher::setkey(const std::string& key) {
 
     }
 
-    //Store the coords of each letter
-
-    // Store the playfair cihper key map
-
 }
 
 std::string PlayfairCipher::applycipher(const std::string& inputText,
                         const CipherMode /*cipherMode*/) const{
 
-    // Change J → I
+    std::string outText{""};
 
-    // If repeated chars in a digraph add an X or Q if XX
+    std::string digraph{""};
 
-    // if the size of input is odd, add a trailing Z
+    outText += inputText[0];
+
+    for (size_t i=1;i<inputText.length();i++)
+    {
+        if (inputText[i] != inputText[i-1])
+        {
+            outText += inputText[i];
+        }
+        else if (inputText[i] != 'X')
+        {
+            outText += "X";
+            outText += inputText[i];
+        }
+        else
+        {
+            outText += "Q";
+            outText += inputText[i];
+        }
+    }
+        // if the size of input is odd, add a trailing Z
+    if (outText.length()%2 == 1)
+    {
+        outText += "Z";
+    }
+
+    // Create digraphs
+
+    for (size_t i = 0;i<outText.length();i+=2)
+    {
+        digraph += outText[i];
+        digraph += outText[i+1];
+        digraph += " ";
+
+    } 
 
     // Loop over the input in Digraphs
 
     // - Find the coords in the grid for each digraph
     // - Apply the rules to these coords to get 'new' coords
     // - Find the letter associated with the new coords
-    return inputText;
+    return digraph;
 
 }
