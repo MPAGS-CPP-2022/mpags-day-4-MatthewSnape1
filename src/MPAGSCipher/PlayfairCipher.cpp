@@ -99,39 +99,46 @@ void PlayfairCipher::setkey(const std::string& key) {
 
 }
 
-std::string PlayfairCipher::applycipher(const std::string& inputText,
-                        const CipherMode /*cipherMode*/) const{
+std::string PlayfairCipher::applycipher(const std::string& inputText,const CipherMode cipherMode) const{
 
     std::string outText{""};
 
     std::string digraph{""};
 
-    outText += inputText[0];
+    switch (cipherMode){
+        case (CipherMode::Encrypt):
+            outText += inputText[0];
 
-    for (size_t i=1;i<inputText.length();i++)
-    {
-        if (inputText[i] != inputText[i-1])
-        {
-            outText += inputText[i];
-        }
-        else if (inputText[i] != 'X')
-        {
-            outText += "X";
-            outText += inputText[i];
-        }
-        else
-        {
-            outText += "Q";
-            outText += inputText[i];
-        }
+            for (size_t i=1;i<inputText.length();i++)
+            {
+                if (inputText[i] != inputText[i-1])
+                {
+                    outText += inputText[i];
+                }
+                else if (inputText[i] != 'X')
+                {
+                    outText += "X";
+                    outText += inputText[i];
+                }
+                else
+                {
+                    outText += "Q";
+                    outText += inputText[i];
+                }
+            }
+            // if the size of input is odd, add a trailing Z
+            if (outText.length()%2 == 1)
+            {
+                outText += "Z";
+            }
+            break;
+        case (CipherMode::Decrypt):
+            outText = inputText;
+            break;
     }
-        // if the size of input is odd, add a trailing Z
-    if (outText.length()%2 == 1)
-    {
-        outText += "Z";
-    }
-
     // Create digraphs
+
+    std::cout << outText << std::endl;
 
     std::pair<int,int> newcord1{0,0};
     std::pair<int,int> newcord2{0,0};
@@ -140,43 +147,74 @@ std::string PlayfairCipher::applycipher(const std::string& inputText,
     {
         std::cout << "Looking at " << outText[i] << outText[i+1] << std::endl;
         auto it1 = str2cord_map_.find(std::string{outText[i]});
-        std::cout << "found " << std::string{outText[i]} << " at " << (*it1).second.first << ":" << (*it1).second.second << std::endl;
         auto it2 = str2cord_map_.find(std::string{outText[i+1]});
-        std::cout << "found " << std::string{outText[i+1]} << " at " << (*it2).second.first << ":" << (*it2).second.second << std::endl;
         
         if ((*it1).second.first == (*it2).second.first){
             newcord1.first = (*it1).second.first;
-            newcord1.second = ((*it1).second.second%5)+1;
-            std::cout << "new cord for " << outText[i] << " is " << newcord1.first << ":" << newcord1.second << std::endl;
             newcord2.first = (*it2).second.first;
-            newcord2.second = ((*it2).second.second%5)+1;
-            std::cout << "new cord for " << outText[i+1] << " is " << newcord2.first << ":" << newcord2.second << std::endl;
-
+            switch(cipherMode){
+                case(CipherMode::Encrypt):
+                    newcord1.second = ((*it1).second.second%5)+1;
+                    newcord2.second = ((*it2).second.second%5)+1;
+                    break;
+                case(CipherMode::Decrypt):
+                    newcord1.second = ((*it1).second.second-1);
+                    newcord2.second = ((*it2).second.second-1);
+                    break;
+            }
+            switch(newcord2.second){
+                case 0 :
+                    newcord2.second = 5;
+            }
+            switch(newcord1.second){
+                case 0 :
+                    newcord1.second = 5;
+            }
         }else if ((*it1).second.second == (*it2).second.second){
-            newcord1.first = ((*it1).second.first%5)+1;
             newcord1.second = (*it1).second.second;
-            std::cout << "new cord for " << outText[i] << " is " << newcord1.first << ":" << newcord1.second << std::endl;
-            newcord2.first = ((*it2).second.first%5)+1;
             newcord2.second = (*it2).second.second;
-            std::cout << "new cord for " << outText[i+1] << " is " << newcord2.first << ":" << newcord2.second << std::endl;
+            switch(cipherMode){
+                case(CipherMode::Encrypt):
+                    newcord1.first = ((*it1).second.first%5)+1;
+                    newcord2.first = ((*it2).second.first%5)+1;
+                    break;
+                case(CipherMode::Decrypt):
+                    newcord1.first = ((*it1).second.first-1);
+                    newcord2.first = ((*it2).second.first-1);
+                    break;
+                    }
+            switch(newcord2.first){
+                case 0 :
+                    newcord2.first = 5;
+            }
+            switch(newcord1.first){
+                case 0 :
+                    newcord1.first = 5;
+            }
         }else{
             newcord1.first = (*it1).second.first;
             newcord1.second = (*it2).second.second; 
             newcord2.first = (*it2).second.first;
-            newcord2.second = (*it1).second.second;          
-        }
+            newcord2.second = (*it1).second.second;  
+        }        
         auto find1 = cord2str_map_.find(newcord1);
         digraph += (*find1).second;
         auto find2 = cord2str_map_.find(newcord2);
         digraph += (*find2).second;
     } 
 
-    // Loop over the input in Digraphs
-
-    // - Find the coords in the grid for each digraph
-    // - Apply the rules to these coords to get 'new' coords
-    // - Find the letter associated with the new coords
-
+    if (cipherMode == CipherMode::Decrypt){
+        std::cout << "Decrypting" << std::endl;
+        if (digraph.back() == 'Z'){
+            digraph.pop_back();
+        }
+        for (size_t i = 1;i<digraph.length()-1;i++){
+            if (digraph[i-1] == digraph[i+1] && (digraph[i] == 'X' || digraph[i] == 'Q')){
+                digraph.erase(digraph.begin()+i);
+            }
+        }
+    }
     return digraph;
-
 }
+                        
+
