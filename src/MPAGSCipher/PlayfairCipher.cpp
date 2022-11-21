@@ -60,17 +60,17 @@ void PlayfairCipher::setkey(const std::string& key) {
     auto rem_iter2 = std::remove_if(key_.begin(),key_.end(), dup_det);
     key_.erase(rem_iter2, key_.end());
 
-    using str2cord_map = std::map<std::string,std::pair<int,int>>;
+    //using str2cord_map = std::map<std::string,std::pair<int,int>>;
 
-    using cord2str_map = std::map<std::pair<int,int>,std::string>;
+    //using cord2str_map = std::map<std::pair<int,int>,std::string>;
 
-    str2cord_map map1;
+    //str2cord_map map1;
 
-    cord2str_map map2;
+    //cord2str_map map2;
 
-    int x = 1;
+    size_t x = 1;
 
-    int y = 1;
+    size_t y = 1;
 
     for (size_t i = 0; i < key_.length();i++)
     {
@@ -80,9 +80,11 @@ void PlayfairCipher::setkey(const std::string& key) {
 
         std::pair<std::pair<int,int>,std::string> p1{cord,std::string{key_[i]}};
 
-        map1.insert( p0 );
+        std::cout << p0.first << " " << p0.second.first << ":" << p0.second.second << std::endl; 
 
-        map2.insert( p1 );
+        str2cord_map_.insert( p0 );
+
+        cord2str_map_.insert( p1 );
 
         x++;
 
@@ -131,12 +133,42 @@ std::string PlayfairCipher::applycipher(const std::string& inputText,
 
     // Create digraphs
 
+    std::pair<int,int> newcord1{0,0};
+    std::pair<int,int> newcord2{0,0};
+    //finding new coordinates
     for (size_t i = 0;i<outText.length();i+=2)
     {
-        digraph += outText[i];
-        digraph += outText[i+1];
-        digraph += " ";
+        std::cout << "Looking at " << outText[i] << outText[i+1] << std::endl;
+        auto it1 = str2cord_map_.find(std::string{outText[i]});
+        std::cout << "found " << std::string{outText[i]} << " at " << (*it1).second.first << ":" << (*it1).second.second << std::endl;
+        auto it2 = str2cord_map_.find(std::string{outText[i+1]});
+        std::cout << "found " << std::string{outText[i+1]} << " at " << (*it2).second.first << ":" << (*it2).second.second << std::endl;
+        
+        if ((*it1).second.first == (*it2).second.first){
+            newcord1.first = (*it1).second.first;
+            newcord1.second = ((*it1).second.second%5)+1;
+            std::cout << "new cord for " << outText[i] << " is " << newcord1.first << ":" << newcord1.second << std::endl;
+            newcord2.first = (*it2).second.first;
+            newcord2.second = ((*it2).second.second%5)+1;
+            std::cout << "new cord for " << outText[i+1] << " is " << newcord2.first << ":" << newcord2.second << std::endl;
 
+        }else if ((*it1).second.second == (*it2).second.second){
+            newcord1.first = ((*it1).second.first%5)+1;
+            newcord1.second = (*it1).second.second;
+            std::cout << "new cord for " << outText[i] << " is " << newcord1.first << ":" << newcord1.second << std::endl;
+            newcord2.first = ((*it2).second.first%5)+1;
+            newcord2.second = (*it2).second.second;
+            std::cout << "new cord for " << outText[i+1] << " is " << newcord2.first << ":" << newcord2.second << std::endl;
+        }else{
+            newcord1.first = (*it1).second.first;
+            newcord1.second = (*it2).second.second; 
+            newcord2.first = (*it2).second.first;
+            newcord2.second = (*it1).second.second;          
+        }
+        auto find1 = cord2str_map_.find(newcord1);
+        digraph += (*find1).second;
+        auto find2 = cord2str_map_.find(newcord2);
+        digraph += (*find2).second;
     } 
 
     // Loop over the input in Digraphs
@@ -144,6 +176,7 @@ std::string PlayfairCipher::applycipher(const std::string& inputText,
     // - Find the coords in the grid for each digraph
     // - Apply the rules to these coords to get 'new' coords
     // - Find the letter associated with the new coords
+
     return digraph;
 
 }

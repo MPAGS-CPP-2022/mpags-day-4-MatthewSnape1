@@ -2,6 +2,7 @@
 #define MPAGSCIPHER_PLAYFAIRCIPHER_HPP
 
 #include <string>
+#include <map>
 #include "CipherMode.hpp"
 
 class PlayfairCipher{
@@ -15,6 +16,14 @@ class PlayfairCipher{
 
     private:
         std::string key_{""};
+
+        using map1 =  std::map<std::string,std::pair<int,int>>;
+
+        map1 str2cord_map_;
+
+        using map2 =  std::map<std::pair<int,int>,std::string>;
+
+        map2 cord2str_map_;
 
 
 };
