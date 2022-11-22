@@ -28,7 +28,7 @@ void PlayfairCipher::setkey(const std::string& key) {
 
     key_.erase(rem_iter,key_.end());
 
-    // Change J -> I (not working)
+    // Change J -> I 
 
     std::transform(key_.begin(),key_.end(), key_.begin(), 
         [] (char c) 
@@ -42,7 +42,7 @@ void PlayfairCipher::setkey(const std::string& key) {
 
     std::string dup_char = {""};
 
-    //Remove duplicated letters (not working?)
+    //Remove duplicated letters
 
     auto dup_det = [&] (char c){
         if (dup_char.find(c) == std::string::npos)
@@ -59,35 +59,21 @@ void PlayfairCipher::setkey(const std::string& key) {
     
     auto rem_iter2 = std::remove_if(key_.begin(),key_.end(), dup_det);
     key_.erase(rem_iter2, key_.end());
-
-    //using str2cord_map = std::map<std::string,std::pair<int,int>>;
-
-    //using cord2str_map = std::map<std::pair<int,int>,std::string>;
-
-    //str2cord_map map1;
-
-    //cord2str_map map2;
-
+    //defines coordinated for keymap grid
     size_t x = 1;
-
     size_t y = 1;
-
+    //runs through kay phrase and generates the two kep maps
     for (size_t i = 0; i < key_.length();i++)
     {
-        std::pair<int, int > cord{y,x};
-
+        std::pair<int, int> cord{y,x};
+        //creates map items for each map and inserts them
         std::pair<std::string,std::pair<int,int>> p0{std::string{key_[i]},cord};
-
         std::pair<std::pair<int,int>,std::string> p1{cord,std::string{key_[i]}};
-
-        std::cout << p0.first << " " << p0.second.first << ":" << p0.second.second << std::endl; 
-
         str2cord_map_.insert( p0 );
-
         cord2str_map_.insert( p1 );
 
         x++;
-
+        //if x becomes greater to 5, then reset to 1 
         switch (x){
             case 6:
                 x = 1;
@@ -104,22 +90,26 @@ std::string PlayfairCipher::applycipher(const std::string& inputText,const Ciphe
     std::string outText{""};
 
     std::string digraph{""};
-
+    //Only do following if user wants to encrypt
     switch (cipherMode){
         case (CipherMode::Encrypt):
+            //add first letter to outtext
             outText += inputText[0];
 
             for (size_t i=1;i<inputText.length();i++)
             {
+                //if there is not a repeated leeter then add to outtext
                 if (inputText[i] != inputText[i-1])
                 {
                     outText += inputText[i];
                 }
+                //if letters are repeated and they are not x then insert an x in between
                 else if (inputText[i] != 'X')
                 {
                     outText += "X";
                     outText += inputText[i];
                 }
+                //otherwise insert a q between repeated letters
                 else
                 {
                     outText += "Q";
@@ -132,6 +122,7 @@ std::string PlayfairCipher::applycipher(const std::string& inputText,const Ciphe
                 outText += "Z";
             }
             break;
+        //if user wants to decrypt then simply copy inputtext to outtext
         case (CipherMode::Decrypt):
             outText = inputText;
             break;
@@ -145,23 +136,27 @@ std::string PlayfairCipher::applycipher(const std::string& inputText,const Ciphe
     //finding new coordinates
     for (size_t i = 0;i<outText.length();i+=2)
     {
-        std::cout << "Looking at " << outText[i] << outText[i+1] << std::endl;
+        //iterators for both letters of digraph
         auto it1 = str2cord_map_.find(std::string{outText[i]});
         auto it2 = str2cord_map_.find(std::string{outText[i+1]});
-        
+        //if y coordinates are the same 
         if ((*it1).second.first == (*it2).second.first){
+            //do not change y coordinates
             newcord1.first = (*it1).second.first;
             newcord2.first = (*it2).second.first;
             switch(cipherMode){
+                //in the case of encryption move the x coordinates right
                 case(CipherMode::Encrypt):
                     newcord1.second = ((*it1).second.second%5)+1;
                     newcord2.second = ((*it2).second.second%5)+1;
                     break;
+                    //in the case of decryption move the x coordinate left
                 case(CipherMode::Decrypt):
                     newcord1.second = ((*it1).second.second-1);
                     newcord2.second = ((*it2).second.second-1);
                     break;
             }
+            //if the x coordinate is less than 1 wrap-arouind to 0
             switch(newcord2.second){
                 case 0 :
                     newcord2.second = 5;
@@ -170,19 +165,24 @@ std::string PlayfairCipher::applycipher(const std::string& inputText,const Ciphe
                 case 0 :
                     newcord1.second = 5;
             }
+        //if x coordinates are the same 
         }else if ((*it1).second.second == (*it2).second.second){
+            //do not change x coordinates
             newcord1.second = (*it1).second.second;
             newcord2.second = (*it2).second.second;
             switch(cipherMode){
+                //in the case of encryption move the y coordinates down
                 case(CipherMode::Encrypt):
                     newcord1.first = ((*it1).second.first%5)+1;
                     newcord2.first = ((*it2).second.first%5)+1;
                     break;
+                //in the case of decryption move the y coordinates up
                 case(CipherMode::Decrypt):
                     newcord1.first = ((*it1).second.first-1);
                     newcord2.first = ((*it2).second.first-1);
                     break;
                     }
+            //if the y coordinate is less than 1 wrap-arouind to 0
             switch(newcord2.first){
                 case 0 :
                     newcord2.first = 5;
@@ -191,29 +191,20 @@ std::string PlayfairCipher::applycipher(const std::string& inputText,const Ciphe
                 case 0 :
                     newcord1.first = 5;
             }
+        //otherwise (letters form a rectanle) exchange x coordinates
         }else{
             newcord1.first = (*it1).second.first;
             newcord1.second = (*it2).second.second; 
             newcord2.first = (*it2).second.first;
             newcord2.second = (*it1).second.second;  
         }        
+        //add letters to digraph
         auto find1 = cord2str_map_.find(newcord1);
         digraph += (*find1).second;
         auto find2 = cord2str_map_.find(newcord2);
         digraph += (*find2).second;
     } 
-
-    if (cipherMode == CipherMode::Decrypt){
-        std::cout << "Decrypting" << std::endl;
-        if (digraph.back() == 'Z'){
-            digraph.pop_back();
-        }
-        for (size_t i = 1;i<digraph.length()-1;i++){
-            if (digraph[i-1] == digraph[i+1] && (digraph[i] == 'X' || digraph[i] == 'Q')){
-                digraph.erase(digraph.begin()+i);
-            }
-        }
-    }
+    //return encrypted/decrypted text
     return digraph;
 }
                         
